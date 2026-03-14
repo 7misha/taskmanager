@@ -16,6 +16,16 @@ int readInt() {
     return value;
 }
 
+char readChar() {
+    char value = 0;
+    std::cin >> value;
+    if (!std::cin) {
+        throw std::invalid_argument("Expected character");
+    }
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    return value;
+}
+
 std::string readLine() {
     std::string line;
     std::getline(std::cin, line);
@@ -41,6 +51,8 @@ void printMenu() {
     std::cout << "9. Sort by id\n";
     std::cout << "10. Find by title\n";
     std::cout << "11. Delete task\n";
+    std::cout << "12. Load tasks from file\n";
+    std::cout << "13. Save tasks to file\n";
     std::cout << "0. Exit\n";
     std::cout << "Choose action: ";
 }
@@ -161,6 +173,30 @@ int main() {
                 service.deleteTask(id);
                 std::cout << "Task deleted.\n";
                 service.printAllTasks();
+                continue;
+            }
+
+            if (action == 12) {
+                std::cout << "This will replace all current tasks. Are you sure? (y/n): ";
+                const char confirm = readChar();
+                if (confirm != 'y' && confirm != 'Y') {
+                    std::cout << "Operation cancelled.\n";
+                    continue;
+                }
+                std::cout << "Make sure the file is in the correct format (id, title, description, "
+                             "status, priority, createdAt separated by tabs).\n";
+                std::cout << "File name: ";
+                const std::string fileName = readLine();
+                service.readFromFile(fileName);
+                std::cout << "Tasks loaded from file.\n";
+                continue;
+            }
+
+            if (action == 13) {
+                std::cout << "File name: ";
+                const std::string fileName = readLine();
+                service.LoadToFile(fileName);
+                std::cout << "Tasks saved to file.\n";
                 continue;
             }
 

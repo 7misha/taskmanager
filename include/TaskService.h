@@ -2,6 +2,7 @@
 
 #include "../include/TaskRepository.h"
 #include <algorithm>
+#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -34,4 +35,8 @@ public:
     void deleteTask(int id);
 
     void printAllTasks() const;
+
+    void readFromFile(const std::string& fileName);
+
+    void LoadToFile(const std::string& fileName) const;
 };
