@@ -187,7 +187,7 @@ int main() {
                              "status, priority, createdAt separated by tabs).\n";
                 std::cout << "File name: ";
                 const std::string fileName = readLine();
-                service.readFromFile(fileName);
+                service.loadFromFile(fileName);
                 std::cout << "Tasks loaded from file.\n";
                 continue;
             }
@@ -195,7 +195,7 @@ int main() {
             if (action == 13) {
                 std::cout << "File name: ";
                 const std::string fileName = readLine();
-                service.LoadToFile(fileName);
+                service.saveToFile(fileName);
                 std::cout << "Tasks saved to file.\n";
                 continue;
             }

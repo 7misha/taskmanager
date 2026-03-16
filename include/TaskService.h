@@ -36,7 +36,7 @@ public:
 
     void printAllTasks() const;
 
-    void readFromFile(const std::string& fileName);
+    void loadFromFile(const std::string& fileName);
 
-    void LoadToFile(const std::string& fileName) const;
+    void saveToFile(const std::string& fileName) const;
 };

@@ -1,6 +1,19 @@
 #include "../include/TaskService.h"
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
+#include <fcntl.h>
+#include <filesystem>
 #include <sstream>
+#include <unistd.h>
 #include <unordered_set>
+
+std::string normalizeToken(std::string me) {
+    for (auto& to : me) {
+        to = static_cast<char>(std::toupper(static_cast<unsigned char>(to)));
+    }
+    return me;
+}
 
 Status getStatus(const std::string& type) {
     if (type == "NEW") {
@@ -144,8 +157,8 @@ void TaskService::printAllTasks() const {
     }
 }
 
-void TaskService::readFromFile(const std::string& fileName) {
-    repo_.getAllTasks().clear();
+void TaskService::loadFromFile(const std::string& fileName) {
+    std::vector<Task> tempTasks;
     std::ifstream in(fileName);
     if (!in.is_open()) {
         return;
@@ -160,6 +173,9 @@ void TaskService::readFromFile(const std::string& fileName) {
         while (std::getline(ss, buf, '\t')) {
             vec.push_back(buf);
         }
+        if (vec.empty()) {
+            continue;
+        }
         if (vec.size() != 6) {
             throw std::invalid_argument("Wrong file format!!!");
         }
@@ -173,23 +189,81 @@ void TaskService::readFromFile(const std::string& fileName) {
         if (!allId.insert(curId).second) {
             throw std::invalid_argument("Duplicate task id in file!!!");
         }
-        repo_.addTask(Task(curId, vec[1], vec[2], getStatus(vec[3]), getPriority(vec[4]), vec[5]));
+        vec[3] = normalizeToken(vec[3]);
+        vec[4] = normalizeToken(vec[4]);
+        tempTasks.emplace_back(
+            Task(curId, vec[1], vec[2], getStatus(vec[3]), getPriority(vec[4]), vec[5]));
         maxId = std::max(maxId, curId);
     }
+    repo_.getAllTasks() = std::move(tempTasks);
     id_ = maxId + 1;
     in.close();
 }
 
-void TaskService::LoadToFile(const std::string& fileName) const {
-    std::ofstream out(fileName);
-    if (!out.is_open()) {
-        throw std::runtime_error("Could not open file for writing.");
+void TaskService::saveToFile(const std::string& fileName) const {
+    namespace fs = std::filesystem;
+    fs::path target(fileName);
+    fs::path dir = target.parent_path().empty() ? fs::path(".") : target.parent_path();
+
+    std::string tmpl = (dir / ".taskmanager.tmp.XXXXXX").string();
+    std::vector<char> buf(tmpl.begin(), tmpl.end());
+    buf.push_back('\0');
+
+    int fd = ::mkstemp(buf.data());
+    if (fd == -1) {
+        throw std::runtime_error("Could not create temporary file in " + dir.string() + ": " +
+                                 std::strerror(errno));
     }
-    const std::vector<Task>& tasks = repo_.getAllTasks();
-    for (const auto& task : tasks) {
-        out << task.getId() << '\t' << task.getTitle() << '\t' << task.getDescription() << '\t'
-            << toStringStatus(task.getStatus()) << '\t' << toStringPriority(task.getPriority())
-            << '\t' << task.getCreatedAt() << '\n';
+
+    fs::path tempPath(buf.data());
+    bool removeTemp = true;
+    try {
+        std::ofstream out(tempPath, std::ios::binary);
+        if (!out) {
+            throw std::runtime_error("Could not open temporary file for writing: " +
+                                     tempPath.string());
+        }
+
+        for (const auto& task : repo_.getAllTasks()) {
+            out << task.getId() << '\t' << task.getTitle() << '\t' << task.getDescription() << '\t'
+                << toStringStatus(task.getStatus()) << '\t' << toStringPriority(task.getPriority())
+                << '\t' << task.getCreatedAt() << '\n';
+        }
+
+        out.flush();
+        if (!out) {
+            throw std::runtime_error("Could not flush temporary file: " + tempPath.string());
+        }
+        if (::fsync(fd) != 0) {
+            throw std::runtime_error("Could not fsync temporary file: " + tempPath.string());
+        }
+        out.close();
+        if (!out) {
+            throw std::runtime_error("Could not close temporary file: " + tempPath.string());
+        }
+
+        if (::close(fd) != 0) {
+            throw std::runtime_error("Could not close temporary file descriptor: " +
+                                     tempPath.string());
+        }
+        fd = -1;
+
+        fs::rename(tempPath, target);
+        removeTemp = false;
+
+        int dfd = ::open(dir.c_str(), O_RDONLY);
+        if (dfd != -1) {
+            ::fsync(dfd);
+            ::close(dfd);
+        }
+    } catch (...) {
+        if (fd != -1) {
+            ::close(fd);
+        }
+        if (removeTemp) {
+            std::error_code ec;
+            fs::remove(tempPath, ec);
+        }
+        throw;
     }
-    out.close();
 }

@@ -46,7 +46,7 @@ TEST(TaskServiceTest, ChangeFieldsAndSaveToFile) {
     service.changePriority(1, "HIGH");
 
     const auto path = uniquePath("save_test.tsv");
-    service.LoadToFile(path.string());
+    service.saveToFile(path.string());
 
     std::ifstream in(path);
     ASSERT_TRUE(in.is_open());
@@ -62,7 +62,7 @@ TEST(TaskServiceTest, ChangeFieldsAndSaveToFile) {
     EXPECT_EQ(fields[4], "HIGH");
     EXPECT_EQ(fields[5], "2026-03-14");
 
-    std::filesystem::remove(path);
+    // std::filesystem::remove(path);
 }
 
 TEST(TaskServiceTest, ReadFromFileReplacesTasksAndResyncsIds) {
@@ -76,14 +76,14 @@ TEST(TaskServiceTest, ReadFromFileReplacesTasksAndResyncsIds) {
         out << "9\tTask nine\tD9\tINPROGRESS\tMEDIUM\t2026-03-12\n";
     }
 
-    service.readFromFile(inPath.string());
+    service.loadFromFile(inPath.string());
     EXPECT_TRUE(service.findByTitle("Old task").empty());
     EXPECT_EQ(service.findByTitle("Task five").size(), 1u);
     EXPECT_EQ(service.findByTitle("Task nine").size(), 1u);
 
     service.addTaskService("After load", "D10", "HIGH", "2026-03-13");
     const auto outPath = uniquePath("read_output.tsv");
-    service.LoadToFile(outPath.string());
+    service.saveToFile(outPath.string());
 
     std::ifstream in(outPath);
     ASSERT_TRUE(in.is_open());
@@ -112,6 +112,46 @@ TEST(TaskServiceTest, ReadFromFileWithDuplicateIdsThrows) {
         out << "1\tB\tD2\tDONE\tHIGH\t2026-03-12\n";
     }
 
-    EXPECT_THROW(service.readFromFile(path.string()), std::invalid_argument);
+    EXPECT_THROW(service.loadFromFile(path.string()), std::invalid_argument);
     std::filesystem::remove(path);
+}
+
+TEST(TaskServiceTest, ReadFromFileErrorDoesNotOverwriteExistingTasks) {
+    TaskService service;
+    service.addTaskService("Keep me", "original", "LOW", "2026-03-10");
+
+    const auto badPath = uniquePath("bad_input.tsv");
+    {
+        std::ofstream out(badPath);
+        out << "2\tImported\tD2\tNEW\tLOW\t2026-03-11\n";
+        out << "broken-line-without-tabs\n";
+    }
+
+    EXPECT_THROW(service.loadFromFile(badPath.string()), std::invalid_argument);
+    EXPECT_EQ(service.findByTitle("Keep me").size(), 1u);
+    EXPECT_TRUE(service.findByTitle("Imported").empty());
+
+    std::filesystem::remove(badPath);
+}
+
+TEST(TaskServiceTest, SaveToFileWorksInNestedDirectory) {
+    TaskService service;
+    service.addTaskService("Nested", "Dir", "LOW", "2026-03-16");
+
+    const auto baseDir = uniquePath("save_nested_dir");
+    const auto nestedDir = baseDir / "sub";
+    std::filesystem::create_directories(nestedDir);
+    const auto outPath = nestedDir / "tasks.tsv";
+
+    service.saveToFile(outPath.string());
+
+    std::ifstream in(outPath);
+    ASSERT_TRUE(in.is_open());
+    std::string line;
+    ASSERT_TRUE(std::getline(in, line));
+    const auto fields = splitTabs(line);
+    ASSERT_EQ(fields.size(), 6u);
+    EXPECT_EQ(fields[1], "Nested");
+
+    std::filesystem::remove_all(baseDir);
 }

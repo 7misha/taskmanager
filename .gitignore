@@ -44,3 +44,6 @@ Thumbs.db
 # Data files if you do not want to track runtime data
 # data/tasks.txt
 # data/tasks.json
+
+# Local private notes/specs
+OFFLINE_DEVELOPMENT_PLAN_PRIVATE.txt
