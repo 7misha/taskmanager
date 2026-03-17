@@ -59,7 +59,8 @@ void printMenu() {
 } // namespace
 
 int main() {
-    TaskService service;
+    TaskRepository repo;
+    TaskService service(repo);
 
     while (true) {
         try {

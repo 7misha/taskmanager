@@ -8,6 +8,9 @@
 #include <unistd.h>
 #include <unordered_set>
 
+TaskService::TaskService(ITaskRepository& repo) : repo_(repo) {
+}
+
 std::string normalizeToken(std::string me) {
     for (auto& to : me) {
         to = static_cast<char>(std::toupper(static_cast<unsigned char>(to)));
@@ -223,13 +226,11 @@ void TaskService::saveToFile(const std::string& fileName) const {
             throw std::runtime_error("Could not open temporary file for writing: " +
                                      tempPath.string());
         }
-
         for (const auto& task : repo_.getAllTasks()) {
             out << task.getId() << '\t' << task.getTitle() << '\t' << task.getDescription() << '\t'
                 << toStringStatus(task.getStatus()) << '\t' << toStringPriority(task.getPriority())
                 << '\t' << task.getCreatedAt() << '\n';
         }
-
         out.flush();
         if (!out) {
             throw std::runtime_error("Could not flush temporary file: " + tempPath.string());
@@ -247,12 +248,10 @@ void TaskService::saveToFile(const std::string& fileName) const {
                                      tempPath.string());
         }
         fd = -1;
-
         fs::rename(tempPath, target);
         removeTemp = false;
-
         int dfd = ::open(dir.c_str(), O_RDONLY);
-        if (dfd != -1) {
+        if (dfd != -1 {
             ::fsync(dfd);
             ::close(dfd);
         }

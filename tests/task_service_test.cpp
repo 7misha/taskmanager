@@ -23,7 +23,8 @@ std::filesystem::path uniquePath(const std::string& suffix) {
 } // namespace
 
 TEST(TaskServiceTest, AddFindAndDeleteFlow) {
-    TaskService service;
+    TaskRepository repo;
+    TaskService service(repo);
 
     service.addTaskService("Buy milk", "Whole milk", "LOW", "2026-03-14");
     service.addTaskService("Write docs", "README", "MEDIUM", "2026-03-15");
@@ -37,7 +38,8 @@ TEST(TaskServiceTest, AddFindAndDeleteFlow) {
 }
 
 TEST(TaskServiceTest, ChangeFieldsAndSaveToFile) {
-    TaskService service;
+    TaskRepository repo;
+    TaskService service(repo);
     service.addTaskService("A", "B", "LOW", "2026-03-14");
 
     service.changeTitle(1, "Updated title");
@@ -62,11 +64,12 @@ TEST(TaskServiceTest, ChangeFieldsAndSaveToFile) {
     EXPECT_EQ(fields[4], "HIGH");
     EXPECT_EQ(fields[5], "2026-03-14");
 
-    // std::filesystem::remove(path);
+    std::filesystem::remove(path);
 }
 
 TEST(TaskServiceTest, ReadFromFileReplacesTasksAndResyncsIds) {
-    TaskService service;
+    TaskRepository repo;
+    TaskService service(repo);
     service.addTaskService("Old task", "old desc", "LOW", "2026-03-10");
 
     const auto inPath = uniquePath("read_input.tsv");
@@ -104,7 +107,8 @@ TEST(TaskServiceTest, ReadFromFileReplacesTasksAndResyncsIds) {
 }
 
 TEST(TaskServiceTest, ReadFromFileWithDuplicateIdsThrows) {
-    TaskService service;
+    TaskRepository repo;
+    TaskService service(repo);
     const auto path = uniquePath("duplicate_ids.tsv");
     {
         std::ofstream out(path);
@@ -117,7 +121,8 @@ TEST(TaskServiceTest, ReadFromFileWithDuplicateIdsThrows) {
 }
 
 TEST(TaskServiceTest, ReadFromFileErrorDoesNotOverwriteExistingTasks) {
-    TaskService service;
+    TaskRepository repo;
+    TaskService service(repo);
     service.addTaskService("Keep me", "original", "LOW", "2026-03-10");
 
     const auto badPath = uniquePath("bad_input.tsv");
@@ -135,7 +140,8 @@ TEST(TaskServiceTest, ReadFromFileErrorDoesNotOverwriteExistingTasks) {
 }
 
 TEST(TaskServiceTest, SaveToFileWorksInNestedDirectory) {
-    TaskService service;
+    TaskRepository repo;
+    TaskService service(repo);
     service.addTaskService("Nested", "Dir", "LOW", "2026-03-16");
 
     const auto baseDir = uniquePath("save_nested_dir");

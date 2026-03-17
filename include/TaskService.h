@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../include/ITaskRepository.h"
 #include "../include/TaskRepository.h"
 #include <algorithm>
 #include <fstream>
@@ -9,10 +10,12 @@
 
 class TaskService {
 private:
-    TaskRepository repo_;
+    ITaskRepository& repo_;
     int id_ = 1;
 
 public:
+    explicit TaskService(ITaskRepository& repo);
+
     void addTaskService(const std::string& title, const std::string& description,
                         const std::string& priority, const std::string& createdAt);
 

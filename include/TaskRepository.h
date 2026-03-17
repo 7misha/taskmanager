@@ -1,22 +1,19 @@
 #pragma once
 
-#include "../include/Task.h"
-#include <exception>
-#include <stdexcept>
-#include <vector>
+#include "ITaskRepository.h"
 
-class TaskRepository {
+class TaskRepository : public ITaskRepository {
 private:
     std::vector<Task> tasks_;
 
 public:
-    void addTask(const Task& cur);
+    void addTask(const Task& cur) override;
 
-    void delTask(int id);
+    void delTask(int id) override;
 
-    Task& getTaskById(int id);
+    Task& getTaskById(int id) override;
 
-    const std::vector<Task>& getAllTasks() const;
+    const std::vector<Task>& getAllTasks() const override;
 
-    std::vector<Task>& getAllTasks();
+    std::vector<Task>& getAllTasks() override;
 };
