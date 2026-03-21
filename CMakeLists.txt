@@ -6,15 +6,19 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(SQLite3 REQUIRED)
+
 add_library(taskmanager_core
     src/Task.cpp
     src/TaskRepository.cpp
     src/TaskService.cpp
+    src/SQLiteTaskRepository.cpp
 )
 
 target_include_directories(taskmanager_core
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+target_link_libraries(taskmanager_core PUBLIC SQLite::SQLite3)
 
 add_executable(taskmanager_cli src/main.cpp)
 target_link_libraries(taskmanager_cli PRIVATE taskmanager_core)
@@ -56,6 +60,7 @@ if(BUILD_TESTING)
         add_executable(taskmanager_tests
             tests/task_test.cpp
             tests/task_repository_test.cpp
+            tests/sqlite_task_repository_test.cpp
             tests/task_service_test.cpp
         )
         target_link_libraries(taskmanager_tests

@@ -11,6 +11,8 @@ public:
 
     void delTask(int id) override;
 
+    void updateTask(const Task& task) override;
+
     Task& getTaskById(int id) override;
 
     const std::vector<Task>& getAllTasks() const override;

@@ -18,6 +18,11 @@ void TaskRepository::delTask(int id) {
     tasks_.erase(tasks_.begin() + curId);
 }
 
+void TaskRepository::updateTask(const Task& task) {
+    Task& x = getTaskById(task.getId());
+    x = task;
+}
+
 Task& TaskRepository::getTaskById(int id) {
     for (auto& to : tasks_) {
         if (to.getId() == id) {

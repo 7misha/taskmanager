@@ -7,6 +7,7 @@ class ITaskRepository {
 public:
     virtual void addTask(const Task& cur) = 0;
     virtual void delTask(int id) = 0;
+    virtual void updateTask(const Task& task) = 0;
 
     virtual Task& getTaskById(int id) = 0;
 

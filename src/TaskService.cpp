@@ -92,6 +92,7 @@ void TaskService::changeDescription(int id, const std::string& description) {
     }
     Task& now = repo_.getTaskById(id);
     now.updateDescription(description);
+    repo_.updateTask(now);
 }
 
 void TaskService::changeTitle(int id, const std::string& title) {
@@ -100,18 +101,21 @@ void TaskService::changeTitle(int id, const std::string& title) {
     }
     Task& now = repo_.getTaskById(id);
     now.updateTitle(title);
+    repo_.updateTask(now);
 }
 
 void TaskService::changeStatus(int id, const std::string& status) {
     Status curStatus = getStatus(status);
     Task& now = repo_.getTaskById(id);
     now.updateStatus(curStatus);
+    repo_.updateTask(now);
 }
 
 void TaskService::changePriority(int id, const std::string& priority) {
     Priority curPriority = getPriority(priority);
     Task& now = repo_.getTaskById(id);
     now.updatePriority(curPriority);
+    repo_.updateTask(now);
 }
 
 void TaskService::sortByPriority() {
@@ -251,7 +255,7 @@ void TaskService::saveToFile(const std::string& fileName) const {
         fs::rename(tempPath, target);
         removeTemp = false;
         int dfd = ::open(dir.c_str(), O_RDONLY);
-        if (dfd != -1 {
+        if (dfd != -1) {
             ::fsync(dfd);
             ::close(dfd);
         }

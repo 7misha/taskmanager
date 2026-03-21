@@ -1,3 +1,4 @@
+#include "../include/SQLiteTaskRepository.h"
 #include "../include/TaskService.h"
 #include <algorithm>
 #include <cctype>
@@ -59,7 +60,7 @@ void printMenu() {
 } // namespace
 
 int main() {
-    TaskRepository repo;
+    SQLiteTaskRepository repo("tasks.db");
     TaskService service(repo);
 
     while (true) {
