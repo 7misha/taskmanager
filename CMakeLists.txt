@@ -24,6 +24,10 @@ add_executable(taskmanager_cli src/main.cpp)
 target_link_libraries(taskmanager_cli PRIVATE taskmanager_core)
 set_target_properties(taskmanager_cli PROPERTIES OUTPUT_NAME taskmanager)
 
+add_executable(taskmanager_http_server src/http_server.cpp)
+target_include_directories(taskmanager_http_server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(taskmanager_http_server PRIVATE taskmanager_core)
+
 include(CTest)
 
 if(BUILD_TESTING)
@@ -61,6 +65,7 @@ if(BUILD_TESTING)
             tests/task_test.cpp
             tests/task_repository_test.cpp
             tests/sqlite_task_repository_test.cpp
+            tests/task_service_sqlite_test.cpp
             tests/task_service_test.cpp
         )
         target_link_libraries(taskmanager_tests

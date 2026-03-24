@@ -9,6 +9,11 @@
 #include <unordered_set>
 
 TaskService::TaskService(ITaskRepository& repo) : repo_(repo) {
+    int mxId = 0;
+    for (const auto& task : repo_.getAllTasks()) {
+        mxId = std::max(mxId, task.getId());
+    }
+    id_ = mxId + 1;
 }
 
 std::string normalizeToken(std::string me) {
