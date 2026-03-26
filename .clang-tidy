@@ -1,0 +1,15 @@
+Checks: >
+  -*,
+  clang-analyzer-*,
+  bugprone-*,
+  performance-*,
+  modernize-use-nullptr,
+  modernize-use-override,
+  readability-implicit-bool-conversion,
+  -bugprone-easily-swappable-parameters
+WarningsAsErrors: ''
+HeaderFilterRegex: '(^|.*/)(src|include|tests)/.*'
+ExcludeHeaderFilterRegex: '(^|.*/)(include/httplib\.h|include/nlohmann/json\.hpp)$'
+FormatStyle: none
+SystemHeaders: false
+UseColor: true

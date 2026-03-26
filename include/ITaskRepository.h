@@ -14,5 +14,7 @@ public:
     virtual std::vector<Task>& getAllTasks() = 0;
     virtual const std::vector<Task>& getAllTasks() const = 0;
 
+    virtual void replaceAllTasks(const std::vector<Task>& v) = 0;
+
     virtual ~ITaskRepository() = default;
 };

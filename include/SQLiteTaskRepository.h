@@ -31,6 +31,8 @@ public:
 
     std::vector<Task>& getAllTasks() override;
 
+    void replaceAllTasks(const std::vector<Task>& v) override;
+
     static Status parseStatus(const std::string& s);
 
     static Priority parsePriority(const std::string& s);

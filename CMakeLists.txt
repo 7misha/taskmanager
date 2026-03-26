@@ -5,6 +5,7 @@ project(taskmanager LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(SQLite3 REQUIRED)
 
@@ -13,6 +14,7 @@ add_library(taskmanager_core
     src/TaskRepository.cpp
     src/TaskService.cpp
     src/SQLiteTaskRepository.cpp
+    src/HttpApi.cpp
 )
 
 target_include_directories(taskmanager_core
@@ -65,6 +67,7 @@ if(BUILD_TESTING)
             tests/task_test.cpp
             tests/task_repository_test.cpp
             tests/sqlite_task_repository_test.cpp
+            tests/http_api_test.cpp
             tests/task_service_sqlite_test.cpp
             tests/task_service_test.cpp
         )

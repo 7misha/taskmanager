@@ -13,6 +13,8 @@ public:
 
     void updateTask(const Task& task) override;
 
+    void replaceAllTasks(const std::vector<Task>& tasks) override;
+
     Task& getTaskById(int id) override;
 
     const std::vector<Task>& getAllTasks() const override;

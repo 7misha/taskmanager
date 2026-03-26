@@ -15,12 +15,16 @@ void TaskRepository::delTask(int id) {
     if (curId == tasks_.size()) {
         throw std::out_of_range("Wrong id!!!");
     }
-    tasks_.erase(tasks_.begin() + curId);
+    tasks_.erase(tasks_.begin() + static_cast<std::vector<Task>::difference_type>(curId));
 }
 
 void TaskRepository::updateTask(const Task& task) {
     Task& x = getTaskById(task.getId());
     x = task;
+}
+
+void TaskRepository::replaceAllTasks(const std::vector<Task>& tasks) {
+    tasks_ = tasks;
 }
 
 Task& TaskRepository::getTaskById(int id) {

@@ -193,7 +193,7 @@ void TaskService::loadFromFile(const std::string& fileName) {
         }
         int curId = 0;
         for (auto to : vec[0]) {
-            if (!std::isdigit(to)) {
+            if (!std::isdigit(static_cast<unsigned char>(to))) {
                 throw std::invalid_argument("Wrong id format in file!!!");
             }
             curId = curId * 10 + (to - '0');
@@ -207,7 +207,7 @@ void TaskService::loadFromFile(const std::string& fileName) {
             Task(curId, vec[1], vec[2], getStatus(vec[3]), getPriority(vec[4]), vec[5]));
         maxId = std::max(maxId, curId);
     }
-    repo_.getAllTasks() = std::move(tempTasks);
+    repo_.replaceAllTasks(tempTasks);
     id_ = maxId + 1;
     in.close();
 }

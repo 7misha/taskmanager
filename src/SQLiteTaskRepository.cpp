@@ -5,7 +5,7 @@
 namespace {
 std::string safeColumnText(sqlite3_stmt* stmt, int col) {
     const unsigned char* txt = sqlite3_column_text(stmt, col);
-    return txt ? reinterpret_cast<const char*>(txt) : "";
+    return txt != nullptr ? reinterpret_cast<const char*>(txt) : "";
 }
 } // namespace
 
@@ -23,7 +23,7 @@ void SQLiteTaskRepository::initSchema() {
     char* errorMessage = nullptr;
     auto verdict = sqlite3_exec(db_, sql, nullptr, nullptr, &errorMessage);
     if (verdict != SQLITE_OK) {
-        std::string totalError = errorMessage ? errorMessage : "Unknown SQLite error";
+        std::string totalError = errorMessage != nullptr ? errorMessage : "Unknown SQLite error";
         sqlite3_free(errorMessage);
         throw std::runtime_error("Failed " + totalError);
     }
@@ -110,8 +110,8 @@ void SQLiteTaskRepository::reloadCache() const {
 
 SQLiteTaskRepository::SQLiteTaskRepository(const std::string& dbPath) : dbPath_(dbPath) {
     if (sqlite3_open(dbPath.c_str(), &db_) != SQLITE_OK) {
-        std::string err = db_ ? sqlite3_errmsg(db_) : "Cannot open DB";
-        if (db_) {
+        std::string err = db_ != nullptr ? sqlite3_errmsg(db_) : "Cannot open DB";
+        if (db_ != nullptr) {
             sqlite3_close(db_);
         }
         db_ = nullptr;
@@ -122,7 +122,7 @@ SQLiteTaskRepository::SQLiteTaskRepository(const std::string& dbPath) : dbPath_(
 }
 
 SQLiteTaskRepository::~SQLiteTaskRepository() {
-    if (db_) {
+    if (db_ != nullptr) {
         sqlite3_close(db_);
         db_ = nullptr;
     }
@@ -209,6 +209,90 @@ Task& SQLiteTaskRepository::findInCacheOrThrow(int id) {
 Task& SQLiteTaskRepository::getTaskById(int id) {
     reloadCache();
     return findInCacheOrThrow(id);
+}
+
+void SQLiteTaskRepository::replaceAllTasks(const std::vector<Task>& v) {
+    char* err = nullptr;
+    auto verdict = sqlite3_exec(db_, "BEGIN TRANSACTION;", nullptr, nullptr, &err);
+    if (verdict != SQLITE_OK) {
+        std::string msg = err != nullptr ? err : "Wrong begin transaction!!!";
+        sqlite3_free(err);
+        throw std::runtime_error(msg);
+    }
+
+    sqlite3_stmt* del = nullptr;
+    sqlite3_stmt* ins = nullptr;
+    bool wasCommit = false;
+    try {
+        const char* delSql = "DELETE FROM tasks;";
+        verdict = sqlite3_prepare_v2(db_, delSql, -1, &del, nullptr);
+        if (verdict != SQLITE_OK) {
+            throw std::runtime_error("Wrong delete in replaceAllTasks: " +
+                                     std::string(sqlite3_errmsg(db_)));
+        }
+        verdict = sqlite3_step(del);
+        sqlite3_finalize(del);
+        del = nullptr;
+        if (verdict != SQLITE_DONE) {
+            throw std::runtime_error("Wrong delete step in replaceAllTasks: " +
+                                     std::string(sqlite3_errmsg(db_)));
+        }
+
+        const char* insSql =
+            "INSERT INTO tasks(id, title, description, status, priority, created_at) "
+            "VALUES(?, ?, ?, ?, ?, ?);";
+        verdict = sqlite3_prepare_v2(db_, insSql, -1, &ins, nullptr);
+        if (verdict != SQLITE_OK) {
+            throw std::runtime_error("Wrong insert prepare in replaceAllTasks: " +
+                                     std::string(sqlite3_errmsg(db_)));
+        }
+
+        for (const auto& to : v) {
+            sqlite3_reset(ins);
+            sqlite3_clear_bindings(ins);
+
+            sqlite3_bind_int(ins, 1, to.getId());
+            sqlite3_bind_text(ins, 2, to.getTitle().c_str(), -1, SQLITE_TRANSIENT);
+            sqlite3_bind_text(ins, 3, to.getDescription().c_str(), -1, SQLITE_TRANSIENT);
+            sqlite3_bind_text(ins, 4, toStringStatus(to.getStatus()).c_str(), -1, SQLITE_TRANSIENT);
+            sqlite3_bind_text(ins, 5, toStringPriority(to.getPriority()).c_str(), -1,
+                              SQLITE_TRANSIENT);
+            sqlite3_bind_text(ins, 6, to.getCreatedAt().c_str(), -1, SQLITE_TRANSIENT);
+
+            verdict = sqlite3_step(ins);
+            if (verdict != SQLITE_DONE) {
+                throw std::runtime_error("Wrong insert step in replaceAllTasks: " +
+                                         std::string(sqlite3_errmsg(db_)));
+            }
+        }
+
+        sqlite3_finalize(ins);
+        ins = nullptr;
+
+        verdict = sqlite3_exec(db_, "COMMIT;", nullptr, nullptr, &err);
+        if (verdict != SQLITE_OK) {
+            std::string msg = err != nullptr ? err : "Wrong commit!!!";
+            sqlite3_free(err);
+            throw std::runtime_error(msg);
+        }
+        wasCommit = true;
+        reloadCache();
+    } catch (...) {
+        if (del != nullptr) {
+            sqlite3_finalize(del);
+        }
+        if (ins != nullptr) {
+            sqlite3_finalize(ins);
+        }
+        if (!wasCommit) {
+            char* rb = nullptr;
+            sqlite3_exec(db_, "ROLLBACK;", nullptr, nullptr, &rb);
+            if (rb != nullptr) {
+                sqlite3_free(rb);
+            }
+        }
+        throw;
+    }
 }
 
 std::vector<Task>& SQLiteTaskRepository::getAllTasks() {
